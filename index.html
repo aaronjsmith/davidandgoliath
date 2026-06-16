@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>David & Goliath — Sling Shot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #72c4e8;
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+
+    h1 {
+      position: fixed;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      font-family: "UnifrakturMaguntia", "Old English Text MT", serif;
+      font-size: clamp(3rem, 7vw, 5rem);
+      font-weight: 400;
+      letter-spacing: 0.03em;
+      pointer-events: none;
+      color: #ffd700;
+      -webkit-text-stroke: 3px #b91c1c;
+      paint-order: stroke fill;
+      text-shadow:
+        2px 2px 0 #991b1b,
+        -2px 2px 0 #991b1b,
+        2px -2px 0 #991b1b,
+        -2px -2px 0 #991b1b,
+        0 3px 0 #991b1b;
+    }
+
+    .subtitle {
+      display: none;
+    }
+
+    #game-wrap {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      line-height: 0;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    .hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.55);
+      border-radius: 4px;
+    }
+
+    .overlay.visible { display: flex; }
+
+    .overlay-panel {
+      background: #f5e6c8;
+      border: 3px solid #5c4030;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      text-align: center;
+      max-width: 420px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    .overlay-panel h2 {
+      color: #3d2914;
+      margin-bottom: 0.5rem;
+      font-size: 1.4rem;
+    }
+
+    .overlay-panel p {
+      color: #5c4030;
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .overlay-panel .verse-ref {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .overlay-panel .verse-text {
+      display: block;
+      font-style: italic;
+    }
+
+    .overlay-panel .verse-continue {
+      display: block;
+      margin-top: 0.85rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    button {
+      background: #8b4513;
+      color: #fff;
+      border: none;
+      padding: 0.6rem 1.4rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+
+    button:hover { background: #a0522d; }
+
+    .hint {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      font-size: 0.75rem;
+      color: #3d2914;
+      text-align: center;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.6);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .credits-btn {
+      position: fixed;
+      bottom: 10px;
+      right: 12px;
+      z-index: 21;
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(92, 64, 48, 0.35);
+      border-radius: 6px;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #3d2914;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+    }
+
+    .credits-btn:hover {
+      background: rgba(255, 255, 255, 0.95);
+    }
+
+    .credits-panel {
+      position: fixed;
+      bottom: 44px;
+      right: 12px;
+      z-index: 22;
+      width: min(360px, calc(100vw - 24px));
+      max-height: min(70vh, 520px);
+      overflow-y: auto;
+      background: #f5e6c8;
+      border: 2px solid #5c4030;
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: #5c4030;
+      display: none;
+    }
+
+    .credits-panel.visible {
+      display: block;
+    }
+
+    .credits-panel h3 {
+      color: #3d2914;
+      font-size: 0.95rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .credits-panel h4 {
+      color: #3d2914;
+      font-size: 0.82rem;
+      margin: 0.75rem 0 0.35rem;
+    }
+
+    .credits-panel ul {
+      margin: 0;
+      padding-left: 1.1rem;
+    }
+
+    .credits-panel li {
+      margin-bottom: 0.35rem;
+    }
+
+    .credits-panel a {
+      color: #8b4513;
+      text-decoration: underline;
+    }
+
+    .credits-panel a:hover {
+      color: #a0522d;
+    }
+
+    .credits-panel .credits-note {
+      margin-top: 0.75rem;
+      font-size: 0.7rem;
+      opacity: 0.85;
+    }
+
+    .credits-close {
+      margin-top: 0.75rem;
+      padding: 0.4rem 0.9rem;
+      font-size: 0.78rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>David &amp; Goliath</h1>
+  <p class="subtitle">Aim for Goliath's head — get close and you'll hit!</p>
+
+  <div id="game-wrap">
+    <canvas id="game"></canvas>
+    <div class="hud">
+      <span id="shots">Stones: 8</span>
+      <span id="status">Tap anywhere to spin — drag to aim at Goliath's head!</span>
+    </div>
+    <div id="overlay" class="overlay">
+      <div class="overlay-panel">
+        <h2 id="overlay-title">Victory!</h2>
+        <p id="overlay-msg">The giant falls. The Lord delivers Israel!</p>
+        <button id="retry-btn">Play Again</button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">Tap anywhere to spin · drag to aim · release to launch</p>
+
+  <button type="button" id="credits-btn" class="credits-btn" aria-expanded="false" aria-controls="credits-panel">Credits</button>
+  <aside id="credits-panel" class="credits-panel" aria-label="Attributions">
+    <h3>Attributions</h3>
+
+    <h4>Art</h4>
+    <p>
+      Character illustrations by
+      <a href="https://www.magnific.com/author/brgfx" target="_blank" rel="noopener noreferrer">brgfx</a>
+      via
+      <a href="https://www.magnific.com/" target="_blank" rel="noopener noreferrer">Magnific</a>.
+    </p>
+
+    <h4>Sounds</h4>
+    <ul>
+      <li>
+        <a href="https://pixabay.com/sound-effects/phatphrogstudio-zombie-voice-idle-moans-2-no-ai-479321/" target="_blank" rel="noopener noreferrer">Zombie Voice — Idle Moans 2</a>
+        by PhatPhrogStudio (Pixabay)
+      </li>
+      <li>
+        <a href="https://pixabay.com/sound-effects/film-special-effects-success-fanfare-trumpets-6185/" target="_blank" rel="noopener noreferrer">Success Fanfare Trumpets</a>
+        by FunWithSound / Freesound (Pixabay)
+      </li>
+      <li>
+        <a href="https://pixabay.com/sound-effects/giant-walking-149155/" target="_blank" rel="noopener noreferrer">Giant Walking</a>
+        by u_83ynl5kta9 (Pixabay)
+      </li>
+      <li>
+        <a href="https://pixabay.com/sound-effects/monster-laughing-97299/" target="_blank" rel="noopener noreferrer">Monster Laughing</a>
+        by danlucaz / Freesound (Pixabay)
+      </li>
+    </ul>
+    <p class="credits-note">Sling spin and release twang use procedural audio in-game. Sound effects used under the Pixabay Content License.</p>
+
+    <button type="button" id="credits-close" class="credits-close">Close</button>
+  </aside>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <script>
+    const { Engine, Render, Runner, Bodies, Body, Composite, Events, Vector, Constraint } = Matter;
+
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const shotsEl = document.getElementById('shots');
+    const statusEl = document.getElementById('status');
+    const overlay = document.getElementById('overlay');
+    const overlayTitle = document.getElementById('overlay-title');
+    const overlayMsg = document.getElementById('overlay-msg');
+    const retryBtn = document.getElementById('retry-btn');
+    const creditsBtn = document.getElementById('credits-btn');
+    const creditsPanel = document.getElementById('credits-panel');
+    const creditsClose = document.getElementById('credits-close');
+
+    const BASE_W = 1200;
+    const BASE_H = 675;
+    let LAYOUT_W = window.innerWidth;
+    let LAYOUT_H = window.innerHeight;
+    let HORIZON = LAYOUT_H * 0.52;
+    let GROUND_Y = LAYOUT_H - 14;
+    let layoutScaleX = LAYOUT_W / BASE_W;
+    let layoutScaleY = LAYOUT_H / BASE_H;
+    let layoutScale = LAYOUT_H / BASE_H;
+
+    let W = window.innerWidth;
+    let H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+
+    let ROCK_SIZE = 19;
+    let STONE_RADIUS = 7;
+
+    const ASSETS = {
+      david: 'lpjw_7adp_230906.png',
+      goliath: 'v45d_bdsn_230906.png'
+    };
+
+    const CLOUDS = [
+      { x: 80, y: 55, w: 140 }, { x: 320, y: 40, w: 170 }, { x: 580, y: 65, w: 130 },
+      { x: 820, y: 35, w: 160 }, { x: 1020, y: 58, w: 120 }
+    ];
+    const GROUND_ROCKS = [
+      { x: 180, y: 598, rx: 16, ry: 10 }, { x: 420, y: 612, rx: 22, ry: 12 },
+      { x: 650, y: 605, rx: 14, ry: 9 }, { x: 890, y: 618, rx: 20, ry: 11 },
+      { x: 1050, y: 600, rx: 15, ry: 10 }, { x: 260, y: 625, rx: 12, ry: 8 }
+    ];
+
+    const ROCK_COUNT = 9;
+
+    const Sfx = {
+      ctx: null,
+      spinNodes: null,
+
+      async ensure() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.ctx.state === 'suspended') await this.ctx.resume();
+      },
+
+      startSpin() {
+        this.ensure();
+        this.stopSpin();
+        const ctx = this.ctx;
+        const t = ctx.currentTime;
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.2, t + 0.06);
+        gain.connect(ctx.destination);
+
+        const len = ctx.sampleRate * 2;
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+
+        const noise = ctx.createBufferSource();
+        noise.buffer = buf;
+        noise.loop = true;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.Q.value = 3;
+        filter.frequency.value = 200;
+
+        const lfo = ctx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.value = 5;
+        const lfoGain = ctx.createGain();
+        lfoGain.gain.value = 140;
+        lfo.connect(lfoGain);
+        lfoGain.connect(filter.frequency);
+
+        const tone = ctx.createOscillator();
+        tone.type = 'triangle';
+        tone.frequency.value = 85;
+        const toneGain = ctx.createGain();
+        toneGain.gain.value = 0.05;
+        tone.connect(toneGain);
+        toneGain.connect(gain);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        noise.start(t);
+        lfo.start(t);
+        tone.start(t);
+
+        this.spinNodes = { noise, lfo, tone, gain, filter, toneGain };
+      },
+
+      updateSpin(power) {
+        if (!this.spinNodes) return;
+        const ctx = this.ctx;
+        const t = ctx.currentTime;
+        const rate = 5 + power * 16;
+        this.spinNodes.lfo.frequency.setTargetAtTime(rate, t, 0.04);
+        this.spinNodes.filter.frequency.setTargetAtTime(160 + power * 280, t, 0.04);
+        this.spinNodes.tone.frequency.setTargetAtTime(65 + power * 90, t, 0.04);
+        this.spinNodes.gain.gain.setTargetAtTime(0.1 + power * 0.2, t, 0.04);
+      },
+
+      stopSpin() {
+        if (!this.spinNodes) return;
+        const ctx = this.ctx;
+        const t = ctx.currentTime;
+        const nodes = this.spinNodes;
+        nodes.gain.gain.setTargetAtTime(0, t, 0.05);
+        setTimeout(() => {
+          try {
+            nodes.noise.stop();
+            nodes.lfo.stop();
+            nodes.tone.stop();
+          } catch (e) { /* already stopped */ }
+        }, 100);
+        this.spinNodes = null;
+      },
+
+      playTwang(power) {
+        this.ensure();
+        const ctx = this.ctx;
+        const t = ctx.currentTime;
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.4 + power * 0.3, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+        gain.connect(ctx.destination);
+
+        const osc = ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(560 + power * 200, t);
+        osc.frequency.exponentialRampToValueAtTime(70, t + 0.14);
+
+        const ping = ctx.createOscillator();
+        ping.type = 'sine';
+        ping.frequency.setValueAtTime(920 + power * 220, t);
+        ping.frequency.exponentialRampToValueAtTime(100, t + 0.2);
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'peaking';
+        filter.frequency.value = 850;
+        filter.Q.value = 1.4;
+        filter.gain.value = 10;
+
+        osc.connect(filter);
+        ping.connect(filter);
+        filter.connect(gain);
+
+        const snapLen = Math.floor(ctx.sampleRate * 0.035);
+        const snapBuf = ctx.createBuffer(1, snapLen, ctx.sampleRate);
+        const snapData = snapBuf.getChannelData(0);
+        for (let i = 0; i < snapLen; i++) {
+          snapData[i] = (Math.random() * 2 - 1) * (1 - i / snapLen);
+        }
+        const snap = ctx.createBufferSource();
+        snap.buffer = snapBuf;
+        const snapGain = ctx.createGain();
+        snapGain.gain.value = 0.18 + power * 0.12;
+        snap.connect(snapGain);
+        snapGain.connect(gain);
+
+        osc.start(t);
+        osc.stop(t + 0.4);
+        ping.start(t);
+        ping.stop(t + 0.4);
+        snap.start(t);
+      },
+
+      zombieSrc: 'phatphrogstudio-zombie-voice-idle-moans-2-no-ai-479321.mp3',
+      fanfareSrc: 'freesound_community-success-fanfare-trumpets-6185.mp3',
+      walkSrc: 'u_83ynl5kta9-giant-walking-149155.mp3',
+      laughSrc: 'freesound_community-monster-laughing-97299.mp3',
+      walkClip: null,
+
+      playZombieDeath(onDone) {
+        const clip = new Audio(this.zombieSrc);
+        clip.volume = 0.9;
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          if (onDone) onDone();
+        };
+        clip.onended = finish;
+        clip.onerror = finish;
+        clip.play().catch(finish);
+        setTimeout(finish, 4000);
+      },
+
+      playFanfare(onDone) {
+        const clip = new Audio(this.fanfareSrc);
+        clip.volume = 0.85;
+        clip.onended = () => { if (onDone) onDone(); };
+        clip.play().catch(() => { if (onDone) onDone(); });
+      },
+
+      startWalking() {
+        if (this.walkClip || gameOver || goliathDying) return;
+        const clip = new Audio(this.walkSrc);
+        clip.loop = true;
+        clip.volume = 0.5;
+        clip.play().then(() => {
+          this.walkClip = clip;
+        }).catch(() => {});
+      },
+
+      stopWalking() {
+        if (!this.walkClip) return;
+        this.walkClip.pause();
+        this.walkClip.currentTime = 0;
+        this.walkClip = null;
+      },
+
+      playMissLaugh() {
+        const clip = new Audio(this.laughSrc);
+        clip.volume = 0.85;
+        clip.play().catch(() => {});
+      }
+    };
+
+    const images = {};
+    const rocks = [];
+    let loaded = 0;
+
+    function assetLoaded() {
+      loaded++;
+      if (loaded === Object.keys(ASSETS).length + ROCK_COUNT) return true;
+      return false;
+    }
+
+    function loadImages() {
+      return new Promise((resolve) => {
+        for (const [key, src] of Object.entries(ASSETS)) {
+          const img = new Image();
+          img.onload = () => { if (assetLoaded()) resolve(); };
+          img.onerror = () => {
+            console.warn('Failed to load', src);
+            if (assetLoaded()) resolve();
+          };
+          img.src = src;
+          images[key] = img;
+        }
+
+        for (let i = 0; i < ROCK_COUNT; i++) {
+          const img = new Image();
+          img.onload = () => { if (assetLoaded()) resolve(); };
+          img.onerror = () => {
+            console.warn('Failed to load rock', i);
+            if (assetLoaded()) resolve();
+          };
+          img.src = `rocks/rock_${i}.png`;
+          rocks[i] = img;
+        }
+      });
+    }
+
+    // Game state
+    let engine, runner;
+    let stone = null;
+    let goliathBody = null;
+    let ground = null;
+    let slingAnchor = null;
+    let slingConstraint = null;
+    let dragging = false;
+    let dragPoint = null;
+    let shotsLeft = 8;
+    let gameOver = false;
+    let won = false;
+    let stoneFlying = false;
+    let aimPower = 0;
+    let goliathTime = 0;
+    let goliathWalkPhase = 0;
+    let davidSwayTime = 0;
+    let currentRock = 0;
+    let stoneAngle = 0;
+    let stoneSpin = 0;
+    let stoneBounces = 0;
+    let stoneFlightTime = 0;
+    let stoneLaunchDir = { x: 1, y: -0.25 };
+    const STONE_BOUNCE_DURATION = 1.0;
+    const STONE_BOUNCE_DAMP = 0.33;
+    const STONE_MAX_SPEED = 64;
+    let slingSpinAngle = 0;
+    let aimDir = { x: 1, y: -0.25 };
+    let lastFrameTime = performance.now();
+    let goliathDying = false;
+    let goliathDeathPhase = null;
+    let goliathPhaseTime = 0;
+    let victoryAwaitingClick = false;
+    const GOLIATH_FALL_DURATION = 0.75;
+
+    const slingPivot = { x: 0, y: 0 };
+
+    const SLING = {
+      maxPull: 200,
+      minLaunch: 8,
+      maxLaunch: 64,
+      powerExponent: 2.0
+    };
+
+    const GOLIATH = {
+      x: LAYOUT_W * 0.82,
+      y: LAYOUT_H * 0.52,
+      width: 280,
+      height: 420,
+      homeX: LAYOUT_W * 0.82,
+      minX: LAYOUT_W * 0.48,
+      maxX: LAYOUT_W * 0.92,
+      advanceSpeed: 14,
+      walkCycleRate: 1.35,
+      bobAmp: 8,
+      waddleAmp: 5,
+      leanAmp: 0.022,
+      // Head target on nose — tighter than the original kid-friendly zone
+      target: { nx: 0.42, ny: 0.17, radius: 39 }
+    };
+
+    let HIT_PADDING = 35;
+
+    // Foreground layers redrawn over the flying rock (spear + shield/hands)
+    const GOLIATH_FOREGROUND = [
+      { sx: 0.00, sy: 0.00, sw: 0.56, sh: 0.80 }, // raised spear and hand
+      { sx: 0.38, sy: 0.26, sw: 0.62, sh: 0.74 }  // shield and hand holding it
+    ];
+
+    const DAVID = {
+      x: LAYOUT_W * 0.14,
+      y: LAYOUT_H * 0.58,
+      slingX: LAYOUT_W * 0.19,
+      slingY: LAYOUT_H * 0.52,
+      drawW: 160,
+      // Center of the white spin burst on the wind-up pose (right half of sprite)
+      spinCenter: { nx: 0.76, ny: 0.23 },
+      spinOrbitScale: 0.25
+    };
+
+    function syncLayout() {
+      LAYOUT_W = W;
+      LAYOUT_H = H;
+      HORIZON = H * 0.52;
+      GROUND_Y = H - Math.max(14, H * 0.021);
+      layoutScaleX = W / BASE_W;
+      layoutScaleY = H / BASE_H;
+      layoutScale = H / BASE_H;
+      ROCK_SIZE = 19 * layoutScale;
+      STONE_RADIUS = 7 * layoutScale;
+      HIT_PADDING = 35 * layoutScale;
+      GOLIATH.width = 280 * layoutScale;
+      GOLIATH.height = 420 * layoutScale;
+      GOLIATH.target.radius = 39 * layoutScale;
+      GOLIATH.advanceSpeed = 14 * layoutScale;
+      GOLIATH.bobAmp = 8 * layoutScale;
+      GOLIATH.waddleAmp = 5 * layoutScale;
+      SLING.maxLaunch = 64 * layoutScale;
+      DAVID.drawW = 160 * layoutScale;
+    }
+
+    syncLayout();
+
+    function syncArenaPositions() {
+      const prevHome = GOLIATH.homeX;
+
+      DAVID.x = W * 0.14;
+      DAVID.y = H * 0.58;
+      DAVID.slingX = W * 0.19;
+      DAVID.slingY = H * 0.52;
+
+      GOLIATH.homeX = W * 0.82;
+      GOLIATH.minX = W * 0.48;
+      GOLIATH.maxX = W * 0.92;
+
+      if (prevHome) {
+        GOLIATH.x += GOLIATH.homeX - prevHome;
+      } else {
+        GOLIATH.x = GOLIATH.homeX;
+      }
+
+      if (stone && !stoneFlying) {
+        slingAnchor = { x: DAVID.slingX - 30, y: DAVID.slingY + 20 };
+        if (!dragging) {
+          Body.setPosition(stone, { x: DAVID.slingX, y: DAVID.slingY });
+        }
+      }
+    }
+
+    function getDavidSpinRect() {
+      const img = images.david;
+      const dw = DAVID.drawW;
+      const dh = img && img.complete ? (img.height / (img.width / 2)) * dw : dw;
+      const dx = DAVID.x - dw / 2;
+      const dy = DAVID.y - dh / 2;
+      return {
+        dx: dx - 10,
+        dy: dy - 20,
+        dw: dw + 20,
+        dh: dh + 20
+      };
+    }
+
+    function updateSlingPivot() {
+      const spin = getDavidSpinRect();
+      slingPivot.x = spin.dx + spin.dw * DAVID.spinCenter.nx;
+      slingPivot.y = spin.dy + spin.dh * DAVID.spinCenter.ny;
+    }
+
+    function dismissFlyingStone() {
+      if (!stoneFlying || gameOver || goliathDying) return;
+      stoneFlying = false;
+      if (stone) {
+        Composite.remove(engine.world, stone);
+        stone = null;
+      }
+      onStoneMissed();
+      if (shotsLeft <= 0) {
+        endGame(false);
+      } else {
+        createStone();
+        statusEl.textContent = 'Tap anywhere to spin — drag to aim at Goliath\'s head!';
+      }
+    }
+
+    function stoneHitWindowEdge() {
+      if (!stone || !stoneFlying) return false;
+      const pad = STONE_RADIUS + 4;
+      const { x, y } = stone.position;
+      return x <= pad || x >= W - pad || y <= pad || y >= H - pad;
+    }
+
+    function clampStoneSpeed() {
+      if (!stone || !stoneFlying) return;
+      const { x, y } = stone.velocity;
+      const speed = Math.hypot(x, y);
+      if (speed <= SLING.maxLaunch) return;
+      const scale = SLING.maxLaunch / speed;
+      Body.setVelocity(stone, { x: x * scale, y: y * scale });
+    }
+
+    function dampStoneRebound() {
+      if (!stone || !stoneFlying) return;
+      const { x, y } = stone.velocity;
+      Body.setVelocity(stone, { x: x * STONE_BOUNCE_DAMP, y: y * STONE_BOUNCE_DAMP });
+      clampStoneSpeed();
+    }
+
+    function resizeGame() {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W;
+      canvas.height = H;
+      syncLayout();
+      syncArenaPositions();
+      if (engine && ground) {
+        Composite.remove(engine.world, ground);
+        ground = Bodies.rectangle(W / 2, GROUND_Y + 40 * layoutScale, W + 200, 80 * layoutScale, {
+          isStatic: true,
+          label: 'ground',
+          friction: 0.9
+        });
+        Composite.add(engine.world, ground);
+      }
+      if (goliathBody) {
+        Body.setPosition(goliathBody, {
+          x: GOLIATH.x,
+          y: GOLIATH.y + GOLIATH.height * 0.05
+        });
+      }
+    }
+
+    window.addEventListener('resize', resizeGame);
+
+    function createEngine() {
+      engine = Engine.create({ gravity: { x: 0, y: 1.2 } });
+      runner = Runner.create();
+    }
+
+    function createWorld() {
+      Composite.clear(engine.world, false);
+      Engine.clear(engine);
+      syncArenaPositions();
+      GOLIATH.x = GOLIATH.homeX;
+      GOLIATH.y = H * 0.52;
+
+      ground = Bodies.rectangle(W / 2, GROUND_Y + 40 * layoutScale, W + 200, 80 * layoutScale, {
+        isStatic: true,
+        label: 'ground',
+        friction: 0.9
+      });
+
+      // Sensor only — rock passes through body, shield, and spear to reach the nose
+      goliathBody = Bodies.rectangle(
+        GOLIATH.x,
+        GOLIATH.y + GOLIATH.height * 0.05,
+        GOLIATH.width * 0.55,
+        GOLIATH.height * 0.85,
+        {
+          isStatic: true,
+          isSensor: true,
+          label: 'goliath',
+          friction: 0.3,
+          restitution: 0.2
+        }
+      );
+
+      Composite.add(engine.world, [ground, goliathBody]);
+      createStone();
+    }
+
+    function createStone() {
+      if (stone) Composite.remove(engine.world, stone);
+      if (slingConstraint) Composite.remove(engine.world, slingConstraint);
+
+      currentRock = Math.floor(Math.random() * ROCK_COUNT);
+      stoneAngle = Math.random() * Math.PI * 2;
+      stoneSpin = 0;
+      stoneBounces = 0;
+      stoneFlightTime = 0;
+
+      stone = Bodies.circle(DAVID.slingX, DAVID.slingY, STONE_RADIUS, {
+        label: 'stone',
+        restitution: 0.2,
+        friction: 0.5,
+        density: 0.004,
+        frictionAir: 0.015,
+        isStatic: true,
+        sleepThreshold: Infinity
+      });
+
+      slingAnchor = { x: DAVID.slingX - 30, y: DAVID.slingY + 20 };
+      updateSlingPivot();
+
+      slingConstraint = Constraint.create({
+        pointA: slingAnchor,
+        bodyB: stone,
+        stiffness: 0.04,
+        length: 80,
+        render: { visible: false }
+      });
+
+      Composite.add(engine.world, [stone, slingConstraint]);
+      stoneFlying = false;
+      dragging = false;
+      aimPower = 0;
+      slingSpinAngle = -Math.PI * 0.35;
+      aimDir = { x: 1, y: -0.25 };
+    }
+
+    function orbitRadius() {
+      const spin = getDavidSpinRect();
+      return spin.dw * DAVID.spinOrbitScale;
+    }
+
+    function stoneOrbitPos(angle) {
+      const r = orbitRadius();
+      return {
+        x: slingPivot.x + Math.cos(angle) * r,
+        y: slingPivot.y + Math.sin(angle) * r
+      };
+    }
+
+    function getStoneLaunch(release) {
+      const aimPoint = { x: GOLIATH.x, y: GOLIATH.y - GOLIATH.height * 0.08 };
+      const toGoliath = Vector.sub(aimPoint, release);
+      const baseAngle = Math.atan2(toGoliath.y, toGoliath.x);
+      const playerAngle = Math.atan2(aimDir.y, aimDir.x);
+      let offset = playerAngle - baseAngle;
+      while (offset > Math.PI) offset -= Math.PI * 2;
+      while (offset < -Math.PI) offset += Math.PI * 2;
+      const clamped = Math.max(-0.6, Math.min(0.6, offset));
+      const angle = baseAngle + clamped;
+      return {
+        dir: { x: Math.cos(angle), y: Math.sin(angle) },
+        speed: SLING.maxLaunch
+      };
+    }
+
+    function aimDirection() {
+      if (dragging && stone) {
+        return getStoneLaunch(aimReleasePoint()).dir;
+      }
+      return aimDir;
+    }
+
+    function aimReleasePoint() {
+      const r = orbitRadius();
+      return {
+        x: slingPivot.x + aimDir.x * r,
+        y: slingPivot.y + aimDir.y * r
+      };
+    }
+
+    function updateSpinningStone() {
+      if (!dragging || !stone) return;
+      updateSlingPivot();
+      const pos = stoneOrbitPos(slingSpinAngle);
+      Body.setPosition(stone, pos);
+      stoneAngle = slingSpinAngle + Math.PI * 0.5;
+    }
+
+    function launchSpeedFromPull(dist) {
+      const t = Math.min(dist / SLING.maxPull, 1);
+      const curved = Math.pow(t, SLING.powerExponent);
+      return SLING.minLaunch + curved * (SLING.maxLaunch - SLING.minLaunch);
+    }
+
+    function getGoliathWalkStyle() {
+      const cycle = goliathWalkPhase * Math.PI * 2;
+      const bob = Math.sin(cycle);
+
+      return {
+        stompY: -bob * GOLIATH.bobAmp,
+        scaleY: 1 - 0.02 * (1 - bob),
+        lean: Math.sin(cycle + Math.PI * 0.25) * GOLIATH.leanAmp,
+        waddleX: Math.sin(cycle) * GOLIATH.waddleAmp
+      };
+    }
+
+    function withGoliathWalkTransform(drawFn) {
+      const style = getGoliathWalkStyle();
+      const { dy, dh } = goliathDrawRect();
+      const pivotX = GOLIATH.x;
+      const pivotY = dy + dh * 0.9;
+
+      ctx.save();
+      ctx.translate(style.waddleX, style.stompY);
+      ctx.translate(pivotX, pivotY);
+      ctx.rotate(style.lean);
+      ctx.scale(1, style.scaleY);
+      ctx.translate(-pivotX, -pivotY);
+      drawFn();
+      ctx.restore();
+    }
+
+    function updateGoliath(dt) {
+      if (gameOver || goliathDying) return;
+
+      goliathTime += 1;
+      goliathWalkPhase += dt * GOLIATH.walkCycleRate;
+
+      let speed = GOLIATH.advanceSpeed;
+      if (GOLIATH.x > W * 0.65) {
+        speed *= 1.2;
+      }
+      GOLIATH.x -= speed * dt;
+
+      if (GOLIATH.x < GOLIATH.minX) GOLIATH.x = GOLIATH.minX;
+      GOLIATH.x = Math.max(GOLIATH.minX, Math.min(GOLIATH.maxX, GOLIATH.x));
+      GOLIATH.y = H * 0.52;
+
+      if (goliathBody) {
+        Body.setPosition(goliathBody, {
+          x: GOLIATH.x,
+          y: GOLIATH.y + GOLIATH.height * 0.05
+        });
+      }
+
+      if (!gameOver && GOLIATH.x <= GOLIATH.minX + 10) {
+        endGame(false, 'Goliath reached David. Israel falls!');
+      }
+    }
+
+    function isHeadHit(stonePos) {
+      const target = getTargetWorld();
+      const dx = stonePos.x - target.x;
+      const dy = stonePos.y - target.y;
+      if (Math.sqrt(dx * dx + dy * dy) < target.r + HIT_PADDING) return true;
+
+      const left = GOLIATH.x - GOLIATH.width / 2;
+      const top = GOLIATH.y - GOLIATH.height / 2;
+      const headCx = left + GOLIATH.width * 0.35;
+      const headHalfW = GOLIATH.width * 0.212;
+      return (
+        stonePos.x > headCx - headHalfW &&
+        stonePos.x < headCx + headHalfW &&
+        stonePos.y > top - 7 &&
+        stonePos.y < top + GOLIATH.height * 0.297
+      );
+    }
+
+    function getTargetWorld() {
+      const left = GOLIATH.x - GOLIATH.width / 2;
+      const top = GOLIATH.y - GOLIATH.height / 2;
+      return {
+        x: left + GOLIATH.width * GOLIATH.target.nx,
+        y: top + GOLIATH.height * GOLIATH.target.ny - 30 * layoutScale,
+        r: GOLIATH.target.radius
+      };
+    }
+
+    function canvasPoint(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = W / rect.width;
+      const scaleY = H / rect.height;
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
+    }
+
+    function onPointerDown(e) {
+      if (gameOver || stoneFlying || shotsLeft <= 0) return;
+      updateSlingPivot();
+      const p = canvasPoint(e);
+      dragging = true;
+      dragPoint = p;
+      aimPower = 1;
+      const toDrag = Vector.sub(p, slingPivot);
+      if (Vector.magnitude(toDrag) > 12) {
+        aimDir = Vector.normalise(toDrag);
+      }
+      if (slingConstraint) {
+        Composite.remove(engine.world, slingConstraint);
+        slingConstraint = null;
+      }
+      updateSpinningStone();
+      statusEl.textContent = 'Spinning — drag to aim at Goliath\'s head…';
+      Sfx.ensure();
+      Sfx.startWalking();
+      Sfx.startSpin();
+    }
+
+    function onPointerMove(e) {
+      if (!dragging || gameOver) return;
+      dragPoint = canvasPoint(e);
+      aimPower = 1;
+      const toDrag = Vector.sub(dragPoint, slingPivot);
+      if (Vector.magnitude(toDrag) > 12) {
+        aimDir = Vector.normalise(toDrag);
+      }
+      Sfx.updateSpin(1);
+    }
+
+    function onPointerUp() {
+      if (!dragging || gameOver) return;
+      dragging = false;
+      Sfx.stopSpin();
+
+      if (slingConstraint) {
+        Composite.remove(engine.world, slingConstraint);
+        slingConstraint = null;
+      }
+
+      const release = aimReleasePoint();
+      const launch = getStoneLaunch(release);
+      stoneLaunchDir = launch.dir;
+
+      Body.setPosition(stone, release);
+      Body.setStatic(stone, false);
+      Body.setVelocity(stone, Vector.mult(launch.dir, launch.speed));
+      const spinDir = Math.random() < 0.5 ? -1 : 1;
+      stoneSpin = spinDir * (6 + launch.speed * 0.35 + Math.random() * 4);
+      Body.setAngularVelocity(stone, stoneSpin);
+      stoneFlying = true;
+      stoneFlightTime = 0;
+      stoneBounces = 0;
+      aimPower = 1;
+      Body.set(stone, {
+        restitution: 0.2,
+        friction: 0.5,
+        frictionAir: 0,
+        gravityScale: 0
+      });
+      Sfx.playTwang(1);
+      shotsLeft--;
+      shotsEl.textContent = `Stones: ${shotsLeft}`;
+      statusEl.textContent = 'Stone away!';
+    }
+
+    function updateStoneFlight(dt) {
+      if (!stoneFlying || !stone) return;
+
+      stoneFlightTime += dt;
+      Body.setVelocity(stone, {
+        x: stoneLaunchDir.x * SLING.maxLaunch,
+        y: stoneLaunchDir.y * SLING.maxLaunch
+      });
+      clampStoneSpeed();
+
+      if (stoneHitWindowEdge()) {
+        dismissFlyingStone();
+        return;
+      }
+
+      if (stoneFlightTime < STONE_BOUNCE_DURATION) return;
+
+      Body.set(stone, { gravityScale: 1, frictionAir: 0.015, restitution: 0, friction: 0.95 });
+      const onGround = stone.position.y >= GROUND_Y - 40 * layoutScale;
+      if (onGround) {
+        Body.setVelocity(stone, { x: stone.velocity.x * 0.75, y: 0 });
+        if (stone.speed < 0.35) {
+          Body.setVelocity(stone, { x: 0, y: 0 });
+          Body.setStatic(stone, true);
+        }
+      }
+    }
+
+    function onStoneMissed() {
+      if (gameOver || goliathDying) return;
+      Sfx.playMissLaugh();
+    }
+
+    function checkWinCondition() {
+      if (!stoneFlying || gameOver || goliathDying) return;
+
+      if (isHeadHit(stone.position)) {
+        endGame(true);
+        return;
+      }
+
+      // Stone settled or left screen
+      if (stone.speed < 0.15 && stone.position.y > H * 0.3) {
+        stoneFlying = false;
+        onStoneMissed();
+        if (shotsLeft <= 0) {
+          endGame(false);
+        } else {
+          setTimeout(() => {
+            if (!gameOver) {
+              createStone();
+              statusEl.textContent = 'Tap anywhere to spin — drag to aim at Goliath\'s head!';
+            }
+          }, 800);
+        }
+      }
+
+      if (
+        stone.position.x < -20 || stone.position.x > W + 20 ||
+        stone.position.y < -20 || stone.position.y > H + 20
+      ) {
+        dismissFlyingStone();
+      }
+    }
+
+    function beginGoliathFall() {
+      if (!goliathDying || goliathDeathPhase !== 'shake') return;
+      goliathDeathPhase = 'fall';
+      goliathPhaseTime = 0;
+    }
+
+    function showVictoryOverlay() {
+      overlayTitle.textContent = 'You Win!';
+      overlayMsg.innerHTML =
+        '<span class="verse-ref">1 Samuel 17:50</span>' +
+        '<span class="verse-text">So David prevailed over the Philistine with a sling and with a stone, ' +
+        'and smote the Philistine, and slew him; but there was no sword in the hand of David.</span>' +
+        '<span class="verse-continue">Click anywhere to play again</span>';
+      retryBtn.style.display = 'none';
+      victoryAwaitingClick = true;
+      overlay.classList.add('visible');
+    }
+
+    function beginGoliathFade() {
+      if (!goliathDying || goliathDeathPhase !== 'fall') return;
+      goliathDeathPhase = 'fade';
+      goliathPhaseTime = 0;
+      showVictoryOverlay();
+      Sfx.playFanfare();
+    }
+
+    function updateGoliathDeath(dt) {
+      goliathPhaseTime += dt;
+      if (goliathDeathPhase === 'fall' && goliathPhaseTime >= GOLIATH_FALL_DURATION) {
+        beginGoliathFade();
+      }
+    }
+
+    function dismissVictory() {
+      if (!victoryAwaitingClick) return;
+      resetGame();
+    }
+
+    function getGoliathDeathStyle() {
+      if (goliathDeathPhase === 'shake') {
+        const ramp = Math.min(goliathPhaseTime / 0.4, 1);
+        const intensity = 6 + ramp * 10;
+        return {
+          angle: 0,
+          shakeX: Math.sin(goliathPhaseTime * 48) * intensity,
+          shakeY: Math.sin(goliathPhaseTime * 57 + 1.2) * intensity * 0.35,
+          alpha: 1
+        };
+      }
+
+      if (goliathDeathPhase === 'fall') {
+        const fallT = Math.min(goliathPhaseTime / GOLIATH_FALL_DURATION, 1);
+        const ease = 1 - Math.pow(1 - fallT, 3);
+        return {
+          angle: ease * (Math.PI / 2),
+          shakeX: 0,
+          shakeY: 0,
+          alpha: 1
+        };
+      }
+
+      const fadeT = Math.min(goliathPhaseTime / 1.2, 1);
+      return {
+        angle: Math.PI / 2,
+        shakeX: 0,
+        shakeY: 0,
+        alpha: 1 - fadeT
+      };
+    }
+
+    function endGame(victory, customMsg) {
+      gameOver = true;
+      won = victory;
+      Sfx.stopWalking();
+
+      if (victory) {
+        goliathDying = true;
+        goliathDeathPhase = 'shake';
+        goliathPhaseTime = 0;
+        stoneFlying = false;
+        dragging = false;
+        Sfx.stopSpin();
+        if (goliathBody) {
+          Composite.remove(engine.world, goliathBody);
+          goliathBody = null;
+        }
+        if (stone) {
+          Body.setVelocity(stone, { x: 0, y: 0 });
+          Body.setAngularVelocity(stone, 0);
+          Body.setStatic(stone, true);
+        }
+        Sfx.playZombieDeath(beginGoliathFall);
+        statusEl.textContent = 'Goliath falls!';
+        return;
+      }
+
+      overlayTitle.textContent = 'Defeat';
+      overlayMsg.textContent = customMsg || 'Your stones missed the mark. Goliath still stands. Try again!';
+      retryBtn.style.display = '';
+      overlay.classList.add('visible');
+      statusEl.textContent = 'Out of stones';
+    }
+
+    function resetGame() {
+      gameOver = false;
+      won = false;
+      goliathDying = false;
+      goliathDeathPhase = null;
+      goliathPhaseTime = 0;
+      victoryAwaitingClick = false;
+      shotsLeft = 8;
+      goliathTime = 0;
+      goliathWalkPhase = 0;
+      syncArenaPositions();
+      GOLIATH.x = GOLIATH.homeX;
+      GOLIATH.y = H * 0.52;
+      shotsEl.textContent = `Stones: ${shotsLeft}`;
+      retryBtn.style.display = '';
+      overlay.classList.remove('visible');
+      createWorld();
+      Sfx.startWalking();
+      statusEl.textContent = 'Tap anywhere to spin — drag to aim at Goliath\'s head!';
+    }
+
+    function drawCloud(cx, cy, w) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, w * 0.42, w * 0.18, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx - w * 0.28, cy + 6, w * 0.28, w * 0.14, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx + w * 0.3, cy + 4, w * 0.32, w * 0.15, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawBackground() {
+      const sky = ctx.createLinearGradient(0, 0, 0, HORIZON);
+      sky.addColorStop(0, '#72c4e8');
+      sky.addColorStop(1, '#b5dff5');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, W, HORIZON);
+
+      const ground = ctx.createLinearGradient(0, HORIZON, 0, H);
+      ground.addColorStop(0, '#c9a876');
+      ground.addColorStop(1, '#8f7350');
+      ctx.fillStyle = ground;
+      ctx.fillRect(0, HORIZON, W, H - HORIZON);
+
+      for (const c of CLOUDS) {
+        drawCloud(c.x * layoutScaleX, c.y * layoutScaleY, c.w * layoutScaleX);
+      }
+      for (let x = 80 * layoutScaleX; x < W - 60; x += 210 * layoutScaleX) {
+        drawCloud(x, (40 + (x * 0.07) % 35) * layoutScaleY, (110 + (x % 40)) * layoutScaleX);
+      }
+
+      for (const r of GROUND_ROCKS) {
+        ctx.fillStyle = '#7a5f3e';
+        ctx.beginPath();
+        ctx.ellipse(r.x * layoutScaleX, r.y * layoutScaleY, r.rx * layoutScale, r.ry * layoutScale, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#9a7a52';
+        ctx.beginPath();
+        ctx.ellipse(r.x * layoutScaleX - 3 * layoutScale, r.y * layoutScaleY - 4 * layoutScale, r.rx * layoutScale * 0.35, r.ry * layoutScale * 0.35, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      for (let x = 60 * layoutScaleX; x < W - 40; x += 180 * layoutScaleX) {
+        ctx.fillStyle = '#7a5f3e';
+        ctx.beginPath();
+        ctx.ellipse(x, GROUND_Y - 18 * layoutScale, 16 * layoutScale, 10 * layoutScale, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function getDavidSwayStyle() {
+      return {
+        swayX: Math.sin(davidSwayTime * 1.25) * 2.5,
+        swayY: Math.sin(davidSwayTime * 1.9 + 0.6) * 1.2,
+        lean: Math.sin(davidSwayTime * 1.05) * 0.012
+      };
+    }
+
+    function drawDavid() {
+      const img = images.david;
+      if (!img || !img.complete) return;
+
+      const sw = img.width / 2;
+      const sh = img.height;
+      const dw = DAVID.drawW;
+      const dh = (sh / sw) * dw;
+      const dx = DAVID.x - dw / 2;
+      const dy = DAVID.y - dh / 2;
+      const style = getDavidSwayStyle();
+      const spin = getDavidSpinRect();
+      const pivotX = DAVID.x;
+      const pivotY = dragging && aimPower > 0.05
+        ? spin.dy + spin.dh * 0.92
+        : dy + dh * 0.92;
+
+      ctx.save();
+      ctx.translate(style.swayX, style.swayY);
+      ctx.translate(pivotX, pivotY);
+      ctx.rotate(style.lean);
+      ctx.translate(-pivotX, -pivotY);
+
+      if (dragging && aimPower > 0.05) {
+        ctx.drawImage(img, sw, 0, sw, sh, spin.dx, spin.dy, spin.dw, spin.dh);
+      } else {
+        ctx.drawImage(img, 0, 0, sw, sh, dx, dy, dw, dh);
+      }
+      ctx.restore();
+    }
+
+    function drawSpinStreak(x, y, angle, alpha) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(-2, -2.5);
+      ctx.lineTo(11, 0);
+      ctx.lineTo(-2, 2.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function goliathDrawRect() {
+      return {
+        dx: GOLIATH.x - GOLIATH.width / 2,
+        dy: GOLIATH.y - GOLIATH.height / 2,
+        dw: GOLIATH.width,
+        dh: GOLIATH.height
+      };
+    }
+
+    function stonePassesGoliath() {
+      if (!stone || !stoneFlying) return false;
+      const { dx, dw } = goliathDrawRect();
+      const pad = 30;
+      return stone.position.x > dx - pad && stone.position.x < dx + dw + pad;
+    }
+
+    function drawGoliathDeathSprite(includeForeground) {
+      const img = images.goliath;
+      if (!img || !img.complete) return;
+
+      const { dx, dy, dw, dh } = goliathDrawRect();
+      const style = getGoliathDeathStyle();
+      const pivotX = GOLIATH.x;
+      const pivotY = dy + dh * 0.88;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, style.alpha);
+      ctx.translate(style.shakeX, style.shakeY);
+      ctx.translate(pivotX, pivotY);
+      ctx.rotate(style.angle);
+      ctx.translate(-pivotX, -pivotY);
+
+      ctx.drawImage(img, dx, dy, dw, dh);
+
+      if (includeForeground) {
+        const iw = img.width;
+        const ih = img.height;
+        for (const c of GOLIATH_FOREGROUND) {
+          ctx.drawImage(
+            img,
+            c.sx * iw, c.sy * ih, c.sw * iw, c.sh * ih,
+            dx + c.sx * dw, dy + c.sy * dh, c.sw * dw, c.sh * dh
+          );
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function drawGoliathBase() {
+      if (goliathDying) {
+        drawGoliathDeathSprite(true);
+        return;
+      }
+      const img = images.goliath;
+      if (!img || !img.complete) return;
+      const { dx, dy, dw, dh } = goliathDrawRect();
+      withGoliathWalkTransform(() => {
+        ctx.drawImage(img, dx, dy, dw, dh);
+      });
+    }
+
+    function drawGoliathForeground() {
+      if (goliathDying) return;
+      const img = images.goliath;
+      if (!img || !img.complete) return;
+      const { dx, dy, dw, dh } = goliathDrawRect();
+      const iw = img.width;
+      const ih = img.height;
+      withGoliathWalkTransform(() => {
+        for (const c of GOLIATH_FOREGROUND) {
+          ctx.drawImage(
+            img,
+            c.sx * iw, c.sy * ih, c.sw * iw, c.sh * ih,
+            dx + c.sx * dw, dy + c.sy * dh, c.sw * dw, c.sh * dh
+          );
+        }
+      });
+    }
+
+    function drawGoliathTarget() {
+      if (goliathDying) return;
+      const target = getTargetWorld();
+      const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 300);
+      const showRadius = target.r + HIT_PADDING * 0.55;
+
+      withGoliathWalkTransform(() => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(target.x, target.y, showRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 220, 50, ${0.35 + pulse * 0.2})`;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(target.x, target.y, 8, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 80, 60, ${0.7 + pulse * 0.2})`;
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
+    function drawRock(x, y, angle, scale = 1) {
+      const img = rocks[currentRock];
+      if (!img || !img.complete) {
+        ctx.beginPath();
+        ctx.arc(x, y, STONE_RADIUS * scale, 0, Math.PI * 2);
+        ctx.fillStyle = '#888';
+        ctx.fill();
+        return;
+      }
+
+      const aspect = img.width / img.height;
+      const dw = ROCK_SIZE * scale;
+      const dh = dw / aspect;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+      ctx.restore();
+    }
+
+    function drawSling() {
+      if (!stone || stoneFlying || !dragging) return;
+
+      updateSlingPivot();
+      const sx = stone.position.x;
+      const sy = stone.position.y;
+
+      // Motion streaks inside the white burst area from the art
+      for (let i = 11; i >= 1; i--) {
+        const a = slingSpinAngle - i * 0.32;
+        const g = stoneOrbitPos(a);
+        drawSpinStreak(g.x, g.y, a, Math.max(0.08, 0.7 - i * 0.055));
+      }
+
+      // Sling strap from David's hand
+      ctx.strokeStyle = '#6b4226';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(slingPivot.x, slingPivot.y);
+      ctx.lineTo(sx, sy);
+      ctx.stroke();
+
+      drawRock(sx, sy, stoneAngle, 0.55);
+    }
+
+    function drawAimLine() {
+      if (!dragging || !stone) return;
+
+      const dir = aimDirection();
+      const start = aimReleasePoint();
+
+      // Straight aim line — extend to ground or screen edge
+      let endX = start.x + dir.x * W;
+      let endY = start.y + dir.y * W;
+      if (dir.y > 0.01) {
+        const t = (GROUND_Y - start.y) / dir.y;
+        if (t > 0) {
+          endX = start.x + dir.x * t;
+          endY = GROUND_Y;
+        }
+      }
+      endX = Math.max(0, Math.min(W, endX));
+
+      ctx.save();
+
+      // Release point marker
+      ctx.beginPath();
+      ctx.arc(start.x, start.y, 6, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 220, 80, 0.9)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Straight aim line
+      const gradient = ctx.createLinearGradient(start.x, start.y, endX, endY);
+      gradient.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+      gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.35)');
+      gradient.addColorStop(1, 'rgba(255, 255, 255, 0.12)');
+
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([8, 6]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.restore();
+
+    }
+
+    function drawFlyingStone() {
+      if (!stone || !stoneFlying) return;
+      drawRock(stone.position.x, stone.position.y, stoneAngle);
+    }
+
+    function render(now) {
+      const dt = Math.min((now - lastFrameTime) / 1000, 0.05);
+      lastFrameTime = now;
+      davidSwayTime += dt;
+
+      if (stoneFlying) {
+        stoneAngle += stoneSpin * dt;
+        updateStoneFlight(dt);
+      } else if (dragging) {
+        slingSpinAngle += (5 + aimPower * 12) * dt;
+        updateSpinningStone();
+        Sfx.updateSpin(aimPower);
+      }
+
+      if (goliathDying) {
+        updateGoliathDeath(dt);
+      } else {
+        updateGoliath(dt);
+      }
+
+      drawBackground();
+      drawDavid();
+      drawGoliathBase();
+
+      if (!goliathDying && stonePassesGoliath()) {
+        drawFlyingStone();
+        drawGoliathForeground();
+      } else if (!goliathDying) {
+        drawSling();
+        drawFlyingStone();
+      }
+
+      drawGoliathTarget();
+      if (!goliathDying) drawAimLine();
+      if (!goliathDying) checkWinCondition();
+      requestAnimationFrame(render);
+    }
+
+    canvas.addEventListener('mousedown', onPointerDown);
+    canvas.addEventListener('mousemove', onPointerMove);
+    canvas.addEventListener('mouseup', onPointerUp);
+    canvas.addEventListener('mouseleave', onPointerUp);
+
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onPointerDown(e.touches[0]); });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); onPointerMove(e.touches[0]); });
+    canvas.addEventListener('touchend', (e) => { e.preventDefault(); onPointerUp(); });
+
+    retryBtn.addEventListener('click', resetGame);
+
+    overlay.addEventListener('click', dismissVictory);
+    overlay.addEventListener('touchend', (e) => {
+      if (!victoryAwaitingClick) return;
+      e.preventDefault();
+      dismissVictory();
+    });
+
+    function setCreditsOpen(open) {
+      creditsPanel.classList.toggle('visible', open);
+      creditsBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    creditsBtn.addEventListener('click', () => {
+      setCreditsOpen(!creditsPanel.classList.contains('visible'));
+    });
+    creditsClose.addEventListener('click', () => setCreditsOpen(false));
+
+    loadImages().then(() => {
+      createEngine();
+      createWorld();
+
+      Events.on(engine, 'collisionStart', (event) => {
+        if (!stoneFlying || gameOver) return;
+        for (const pair of event.pairs) {
+          const labels = [pair.bodyA.label, pair.bodyB.label];
+          if (!labels.includes('stone')) continue;
+
+          if (labels.includes('goliath')) {
+            if (isHeadHit(stone.position)) endGame(true);
+            continue;
+          }
+
+          if (labels.includes('ground')) {
+            if (stoneFlightTime >= STONE_BOUNCE_DURATION) {
+              Body.setVelocity(stone, { x: stone.velocity.x * 0.5, y: 0 });
+              continue;
+            }
+            stoneBounces += 1;
+            requestAnimationFrame(() => dampStoneRebound());
+            if (stoneBounces >= 2) {
+              Body.set(stone, { restitution: 0, friction: 0.9 });
+            }
+          }
+        }
+      });
+
+      Runner.run(runner, engine);
+      requestAnimationFrame(render);
+    });
+  </script>
+</body>
+</html>
