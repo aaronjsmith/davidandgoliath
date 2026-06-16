@@ -236,6 +236,24 @@
       padding: 0.4rem 0.9rem;
       font-size: 0.78rem;
     }
+
+    @media (max-width: 768px), (max-height: 600px) {
+      h1 {
+        font-size: clamp(1.8rem, 5vw, 2.8rem);
+        top: 4px;
+      }
+
+      .hint {
+        font-size: 0.65rem;
+        bottom: 6px;
+        white-space: normal;
+        max-width: 92vw;
+      }
+
+      .hud {
+        font-size: 0.72rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -261,6 +279,12 @@
   <button type="button" id="credits-btn" class="credits-btn" aria-expanded="false" aria-controls="credits-panel">Credits</button>
   <aside id="credits-panel" class="credits-panel" aria-label="Attributions">
     <h3>Attributions</h3>
+
+    <h4>Game</h4>
+    <p>
+      Created by Aaron Smith —
+      <a href="https://aaronjsmith.me" target="_blank" rel="noopener noreferrer">aaronjsmith.me</a>
+    </p>
 
     <h4>Art</h4>
     <p>
@@ -319,6 +343,7 @@
     let layoutScaleX = LAYOUT_W / BASE_W;
     let layoutScaleY = LAYOUT_H / BASE_H;
     let layoutScale = LAYOUT_H / BASE_H;
+    let characterScale = 1;
 
     let W = window.innerWidth;
     let H = window.innerHeight;
@@ -651,6 +676,10 @@
       spinOrbitScale: 0.25
     };
 
+    function isPhoneLayout() {
+      return Math.min(W, H) <= 600 || (W <= 768 && 'ontouchstart' in window);
+    }
+
     function syncLayout() {
       LAYOUT_W = W;
       LAYOUT_H = H;
@@ -659,32 +688,35 @@
       layoutScaleX = W / BASE_W;
       layoutScaleY = H / BASE_H;
       layoutScale = H / BASE_H;
-      ROCK_SIZE = 19 * layoutScale;
-      STONE_RADIUS = 7 * layoutScale;
-      HIT_PADDING = 35 * layoutScale;
-      GOLIATH.width = 280 * layoutScale;
-      GOLIATH.height = 420 * layoutScale;
-      GOLIATH.target.radius = 39 * layoutScale;
-      GOLIATH.advanceSpeed = 14 * layoutScale;
-      GOLIATH.bobAmp = 8 * layoutScale;
-      GOLIATH.waddleAmp = 5 * layoutScale;
+      characterScale = isPhoneLayout() ? 0.62 : 1;
+      const charScale = layoutScale * characterScale;
+      ROCK_SIZE = 19 * charScale;
+      STONE_RADIUS = 7 * charScale;
+      HIT_PADDING = 35 * charScale;
+      GOLIATH.width = 280 * charScale;
+      GOLIATH.height = 420 * charScale;
+      GOLIATH.target.radius = 39 * charScale;
+      GOLIATH.advanceSpeed = 14 * charScale;
+      GOLIATH.bobAmp = 8 * charScale;
+      GOLIATH.waddleAmp = 5 * charScale;
       SLING.maxLaunch = 64 * layoutScale;
-      DAVID.drawW = 160 * layoutScale;
+      DAVID.drawW = 160 * charScale;
     }
 
     syncLayout();
 
     function syncArenaPositions() {
       const prevHome = GOLIATH.homeX;
+      const phone = isPhoneLayout();
 
-      DAVID.x = W * 0.14;
-      DAVID.y = H * 0.58;
-      DAVID.slingX = W * 0.19;
-      DAVID.slingY = H * 0.52;
+      DAVID.x = W * (phone ? 0.08 : 0.14);
+      DAVID.y = H * (phone ? 0.56 : 0.58);
+      DAVID.slingX = W * (phone ? 0.14 : 0.19);
+      DAVID.slingY = H * (phone ? 0.50 : 0.52);
 
-      GOLIATH.homeX = W * 0.82;
-      GOLIATH.minX = W * 0.48;
-      GOLIATH.maxX = W * 0.92;
+      GOLIATH.homeX = W * (phone ? 0.88 : 0.82);
+      GOLIATH.minX = W * (phone ? 0.42 : 0.48);
+      GOLIATH.maxX = W * (phone ? 0.95 : 0.92);
 
       if (prevHome) {
         GOLIATH.x += GOLIATH.homeX - prevHome;
@@ -693,7 +725,10 @@
       }
 
       if (stone && !stoneFlying) {
-        slingAnchor = { x: DAVID.slingX - 30, y: DAVID.slingY + 20 };
+        slingAnchor = {
+          x: DAVID.slingX - 30 * layoutScale * characterScale,
+          y: DAVID.slingY + 20 * layoutScale * characterScale
+        };
         if (!dragging) {
           Body.setPosition(stone, { x: DAVID.slingX, y: DAVID.slingY });
         }
@@ -795,7 +830,7 @@
       Engine.clear(engine);
       syncArenaPositions();
       GOLIATH.x = GOLIATH.homeX;
-      GOLIATH.y = H * 0.52;
+      GOLIATH.y = H * (isPhoneLayout() ? 0.50 : 0.52);
 
       ground = Bodies.rectangle(W / 2, GROUND_Y + 40 * layoutScale, W + 200, 80 * layoutScale, {
         isStatic: true,
@@ -961,7 +996,7 @@
 
       if (GOLIATH.x < GOLIATH.minX) GOLIATH.x = GOLIATH.minX;
       GOLIATH.x = Math.max(GOLIATH.minX, Math.min(GOLIATH.maxX, GOLIATH.x));
-      GOLIATH.y = H * 0.52;
+      GOLIATH.y = H * (isPhoneLayout() ? 0.50 : 0.52);
 
       if (goliathBody) {
         Body.setPosition(goliathBody, {
@@ -1262,7 +1297,7 @@
       goliathWalkPhase = 0;
       syncArenaPositions();
       GOLIATH.x = GOLIATH.homeX;
-      GOLIATH.y = H * 0.52;
+      GOLIATH.y = H * (isPhoneLayout() ? 0.50 : 0.52);
       shotsEl.textContent = `Stones: ${shotsLeft}`;
       retryBtn.style.display = '';
       overlay.classList.remove('visible');
